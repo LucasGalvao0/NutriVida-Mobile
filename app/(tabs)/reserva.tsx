@@ -34,7 +34,7 @@ const imgConsultorio = require("@/assets/images/imgReserva.png");
 const imgMap = require("@/assets/images/Lugar que fica consultorio.jpg");
 
 // IMPORTANTE: Ajuste para o IP da sua API
-const API_URL = 'http://192.168.0.109:3000';
+const API_URL = 'http://192.168.11.255:3000';
 
 export default function DetalhesReserva() {
   const router = useRouter();

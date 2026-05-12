@@ -31,7 +31,7 @@ import {
   Code
 } from "lucide-react-native";
 
-const API_URL = 'http://192.168.0.109:3000'; // Ajuste para o IP correto da sua API
+const API_URL = 'http://192.168.11.255:3000'; // Ajuste para o IP correto da sua API
 
 export default function Contato() {
   const router = useRouter();

@@ -112,7 +112,7 @@ export default function CardapioForm() {
   };
 
   // ── submit ────────────────────────────────────────────────────────────────
-  const API_URL = 'http://192.168.0.109:3000'; // 👈 um único IP
+  const API_URL = 'http://192.168.11.255:3000'; // 👈 um único IP
 
 const handleSubmit = async () => {
     console.log("=== SUBMIT ===", formData);

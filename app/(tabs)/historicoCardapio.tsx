@@ -8,7 +8,7 @@ import { ChevronDown, ChevronUp, ChevronLeft, History, Calendar, Clock, Shopping
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.109:3000';
+const API_URL = 'http://192.168.11.255:3000';
 const DIAS = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
 
 export default function HistoricoCardapio() {

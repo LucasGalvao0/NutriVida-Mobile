@@ -20,7 +20,7 @@ import { Linking } from 'react-native';
 const logoApp = require("@/assets/images/Logonutri.png");
 
 // IP da sua máquina
-const API_URL = 'http://192.168.0.109:3000';
+const API_URL = 'http://192.168.11.255:3000';
 
 export default function Register() {
   const router = useRouter();
