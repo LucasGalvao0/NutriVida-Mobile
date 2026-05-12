@@ -29,6 +29,18 @@ function calcularSimilaridade(a, b) {
     return similarity;
 }
 
+router.get('/usuario/:usuario_id', async (req, res) => {
+    try {
+        const [rows] = await banco.query(
+            'SELECT * FROM cardapio WHERE usuario_id = ? ORDER BY id DESC',
+            [req.params.usuario_id]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ erro: err.message });
+    }
+});
+
 // =========================================
 // POST /salvarCardapio
 // =========================================

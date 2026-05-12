@@ -22,6 +22,7 @@ const rotasNutricionistas = require('./View/nutricionistaRouters'); // ou o nome
 const rotasContatos = require('./View/contatosRouters'); // ou o nome exato do seu arquivo de contatos
 
 
+
 // Middleware
 app.use(express.json());
 

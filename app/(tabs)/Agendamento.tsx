@@ -31,7 +31,7 @@ const perfilIcon = require("@/assets/images/perfilicon.png");
 const logoApp = require("@/assets/images/logo.png");
 const imgConsultorio = require("@/assets/images/consultorio.jpg");
 
-const API_URL = 'http://192.168.14.207:3000'; 
+const API_URL = 'http://192.168.0.109:3000'; 
 
 export default function HomeAgendamentos() {
   const router = useRouter();

@@ -38,7 +38,7 @@ const { width } = Dimensions.get("window");
 const logoApp = require("@/assets/images/logo.png");
 
 // COLOQUE AQUI O IP DA SUA MÁQUINA E A PORTA DO SEU BACKEND
-const API_URL = 'http://192.168.14.207:3000';
+const API_URL = 'http://192.168.0.109:3000';
 
 export default function Perfil() {
   const router = useRouter();

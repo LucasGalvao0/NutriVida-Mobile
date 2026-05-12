@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ScrollView,
   StyleSheet,
@@ -111,33 +112,31 @@ export default function CardapioForm() {
   };
 
   // ── submit ────────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!formData.nome.trim())            return showToast("Preencha o Nome completo.", "erro");
+  const API_URL = 'http://192.168.0.109:3000'; // 👈 um único IP
+
+const handleSubmit = async () => {
+    console.log("=== SUBMIT ===", formData);
+
+    if (!formData.nome.trim()) return showToast("Preencha o Nome completo.", "erro");
     const idade = parseInt(formData.idade, 10);
-    if (isNaN(idade) || idade <= 0)       return showToast("Insira uma idade válida.", "erro");
+    if (isNaN(idade) || idade <= 0) return showToast("Insira uma idade válida.", "erro");
     const imc = parseFloat(formData.imc.replace(",", "."));
-    if (isNaN(imc) || imc <= 0)           return showToast("Insira um IMC válido.", "erro");
+    if (isNaN(imc) || imc <= 0) return showToast("Insira um IMC válido.", "erro");
     const altura = parseFloat(formData.altura.replace(",", "."));
-    if (isNaN(altura) || altura < 0.5)    return showToast("Insira uma altura válida (ex: 1.75).", "erro");
+    if (isNaN(altura) || altura < 0.5) return showToast("Insira uma altura válida (ex: 1.75).", "erro");
     const peso = parseFloat(formData.peso);
-    if (isNaN(peso) || peso <= 0)         return showToast("Insira um peso válido.", "erro");
-    if (!formData.sexo)                   return showToast("Selecione o Sexo.", "erro");
-    if (!formData.objetivo)               return showToast("Selecione um objetivo alimentar.", "erro");
-    if (formData.objetivo === "outros" && !formData.objetivoOutros.trim())
-                                          return showToast("Descreva seu objetivo em 'Outros'.", "erro");
-    if (!formData.nivelAtividade)         return showToast("Selecione o nível de atividade física.", "erro");
-    if (!formData.tempoPreparo)           return showToast("Selecione o tempo de preparo.", "erro");
-    if (!formData.trabalho.trim())        return showToast("Informe o tipo de trabalho.", "erro");
-    if (!formData.rotina.trim())          return showToast("Descreva sua rotina.", "erro");
-    if (formData.temAlergia === null)     return showToast("Informe se possui alergia alimentar.", "erro");
-    if (formData.temAlergia && !formData.alergias.trim())
-                                          return showToast("Preencha o campo de alergias.", "erro");
-    if (formData.segueDieta === null)     return showToast("Informe se segue alguma dieta.", "erro");
-    if (formData.segueDieta && !formData.dieta.trim())
-                                          return showToast("Preencha o campo sobre a dieta.", "erro");
-    if (formData.praticaEsporte === null) return showToast("Informe se pratica algum esporte.", "erro");
-    if (formData.praticaEsporte && !formData.esporte.trim())
-                                          return showToast("Preencha o campo de esporte.", "erro");
+    if (isNaN(peso) || peso <= 0) return showToast("Insira um peso válido.", "erro");
+    if (!formData.sexo) return showToast("Selecione o Sexo.", "erro");
+    if (!formData.objetivo) return showToast("Selecione um objetivo.", "erro");
+    if (formData.objetivo === "outros" && !formData.objetivoOutros.trim()) return showToast("Descreva seu objetivo.", "erro");
+    if (!formData.trabalho.trim()) return showToast("Informe o tipo de trabalho.", "erro");
+    if (!formData.rotina.trim()) return showToast("Descreva sua rotina.", "erro");
+    if (formData.temAlergia === null) return showToast("Informe se possui alergia.", "erro");
+    if (formData.temAlergia && !formData.alergias.trim()) return showToast("Preencha o campo de alergias.", "erro");
+    if (formData.segueDieta === null) return showToast("Informe se segue alguma dieta.", "erro");
+    if (formData.segueDieta && !formData.dieta.trim()) return showToast("Preencha o campo sobre a dieta.", "erro");
+    if (formData.praticaEsporte === null) return showToast("Informe se pratica esporte.", "erro");
+    if (formData.praticaEsporte && !formData.esporte.trim()) return showToast("Preencha o campo de esporte.", "erro");
 
     const alimentosList = formData.alimentosFavoritos
       .split(",").map(a => a.trim()).filter(a => a.length > 0);
@@ -148,8 +147,12 @@ export default function CardapioForm() {
     else if (formData.objetivo === "perder_peso") objetivoFinal = "Perder peso";
     else objetivoFinal = formData.objetivoOutros;
 
+    const rawUsuario = await AsyncStorage.getItem('dadosUsuario');
+    const usuario = rawUsuario ? JSON.parse(rawUsuario) : null;
+    const usuario_id = usuario?.id || null;
+
     const dados = {
-      usuario_id: null,
+      usuario_id,
       name: formData.nome,
       age: idade,
       imc,
@@ -171,52 +174,55 @@ export default function CardapioForm() {
 
     try {
       const { ok: ok1, data: respostaBackend } = await safeFetch(
-        "http://192.168.14.207:3000/respostas",
+        `${API_URL}/respostas`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) }
       );
 
       if (!ok1 || !respostaBackend?.sucesso) {
         esconderLoading(setLoading);
-        return showToast("Erro ao salvar respostas. Verifique o servidor.", "erro");
+        return showToast("Erro ao salvar respostas.", "erro");
       }
       const respostas_id = respostaBackend.respostas_id;
 
       const { ok: ok2, data: result } = await safeFetch(
-        `http://192.168.14.207:3000/cardapio/CardapioCriado?timestamp=${Date.now()}`,
+        `${API_URL}/cardapio/CardapioCriado?timestamp=${Date.now()}`,
         { method: "POST", headers: { "Content-Type": "application/json", "Cache-Control": "no-cache" }, body: JSON.stringify(dados) }
       );
 
       if (!ok2 || !result) {
         esconderLoading(setLoading);
-        return showToast("Erro ao gerar o cardápio. Verifique o servidor.", "erro");
+        return showToast("Erro ao gerar o cardápio.", "erro");
       }
 
       const hash_respostas = CryptoJS.SHA256(JSON.stringify(dados)).toString();
-      const cardapioParaSalvar =
-        typeof result.data === "string"
-          ? result.data
-          : JSON.stringify(result.data, null, 2);
+      const cardapioParaSalvar = typeof result.data === "string"
+        ? result.data : JSON.stringify(result.data);
+      const nomeCardapio = result.data?.nome_cardapio || "Meu Plano Nutricional";
 
-      await safeFetch("http://192.168.14.207:3000/salvarCardapio", {
+      await safeFetch(`${API_URL}/salvarCardapio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          usuario_id: null,
+          usuario_id,
           respostas_id,
           hash_respostas,
           cardapio_texto: cardapioParaSalvar,
+          nome_cardapio: nomeCardapio,
           respostas_formulario: dados,
         }),
       });
 
       esconderLoading(setLoading);
       showToast("Cardápio gerado com sucesso!", "sucesso");
-      setCardapioGerado(cardapioParaSalvar);
+
+      esconderLoading(setLoading);
+showToast("Cardápio gerado com sucesso!", "sucesso");
+setCardapioGerado(cardapioParaSalvar);
 
     } catch (error) {
       esconderLoading(setLoading);
       showToast("Erro de conexão com o servidor.", "erro");
-      console.error("Erro geral:", error);
+      console.error("Erro:", error);
     }
   };
 
@@ -450,29 +456,109 @@ export default function CardapioForm() {
   };
 
   if (cardapioGerado) {
-    return (
-      <LinearGradient colors={["#0a1f1a", "#0f172a"]} style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-          
-          <View style={styles.resultHeader}>
-            <Utensils color="#00E676" size={26} />
-            <Text style={styles.resultTitle}>Seu Cardápio Personalizado</Text>
+  const dados = JSON.parse(cardapioGerado);
+  const DIAS = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
+
+  return (
+    <LinearGradient colors={["#0a1f1a", "#0f172a"]} style={styles.gradient}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => setCardapioGerado(null)} activeOpacity={0.75}>
+          <ChevronLeft color="#00E676" size={26} strokeWidth={2.5} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{dados.nome_cardapio || "Seu Cardápio"}</Text>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => router.push('/(tabs)/historicoCardapio')}
+          activeOpacity={0.75}
+        >
+          <Archive color="#00E676" size={20} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+
+        {/* Info chips */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {dados.objective && <View style={styles.chip}><Text style={styles.chipText}>🎯 {dados.objective}</Text></View>}
+          {dados.weight && <View style={styles.chip}><Text style={styles.chipText}>⚖️ {dados.weight}kg</Text></View>}
+          {dados.alergia && dados.alergia !== 'Nenhuma' && <View style={styles.chip}><Text style={styles.chipText}>⚠️ {dados.alergia}</Text></View>}
+        </View>
+
+        {/* Dias */}
+        {dados.refeicoes?.map((dia: any, diaIdx: number) => {
+          const calDia = dia.refeicoes?.reduce((a: number, r: any) => a + (r.calorias || 0), 0) || 0;
+          return (
+            <View key={diaIdx} style={resultStyles.diaCard}>
+              <View style={resultStyles.diaHeader}>
+                <View style={resultStyles.diaBullet} />
+                <Text style={resultStyles.diaNome}>{DIAS[diaIdx] || dia.nome}</Text>
+                {calDia > 0 && <Text style={resultStyles.diaKcal}>{calDia} kcal</Text>}
+              </View>
+
+              {dia.refeicoes?.map((ref: any, refIdx: number) => (
+                <View key={refIdx} style={resultStyles.refCard}>
+                  <View style={resultStyles.refHeader}>
+                    <Text style={resultStyles.refNome}>{ref.nome}</Text>
+                    <Text style={resultStyles.refHorario}>{ref.horario}</Text>
+                    {ref.calorias > 0 && <Text style={resultStyles.refKcal}>{ref.calorias} kcal</Text>}
+                  </View>
+                  {ref.alimentos?.map((alimento: string, aIdx: number) => (
+                    <View key={aIdx} style={resultStyles.alimentoRow}>
+                      <View style={[
+                        resultStyles.bullet,
+                        alimento.toLowerCase().startsWith('tempero:') && { backgroundColor: '#f59e0b' }
+                      ]} />
+                      <Text style={[
+                        resultStyles.alimentoText,
+                        alimento.toLowerCase().startsWith('tempero:') && { color: '#f59e0b', fontStyle: 'italic' }
+                      ]}>{alimento}</Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          );
+        })}
+
+        {/* Suplementos */}
+        {dados.suplementos && (
+          <View style={resultStyles.supCard}>
+            <Text style={resultStyles.supTitle}>💊 Suplementos</Text>
+            {[
+              ...(dados.suplementos.suplementos_gerais || []),
+              ...(dados.suplementos.suplementos_antes_treino_academia || []),
+              ...(dados.suplementos.suplementos_antes_treino_esporte || []),
+            ].map((s: string, i: number) => (
+              <View key={i} style={resultStyles.alimentoRow}>
+                <View style={resultStyles.bullet} />
+                <Text style={resultStyles.alimentoText}>{s}</Text>
+              </View>
+            ))}
           </View>
+        )}
 
-          <Text style={styles.resultText}>
-            {cardapioGerado}
-          </Text>
+        {/* Botões */}
+        <TouchableOpacity
+          style={{ borderRadius: 25, overflow: 'hidden', marginTop: 20 }}
+          onPress={() => router.push('/(tabs)/historicoCardapio')}
+        >
+          <LinearGradient colors={["#00E676", "#00C853"]} style={{ paddingVertical: 16, alignItems: 'center' }}>
+            <Text style={{ color: '#0D332D', fontSize: 16, fontWeight: '800' }}>Ver Histórico</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.resultBtn}
-            onPress={() => setCardapioGerado(null)}
-          >
-            <Text style={styles.resultBtnText}>Gerar outro cardápio</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </LinearGradient>
-    );
-  }
+        <TouchableOpacity
+          style={{ marginTop: 12, paddingVertical: 14, alignItems: 'center', borderRadius: 25, borderWidth: 1.5, borderColor: 'rgba(0,230,118,0.3)' }}
+          onPress={() => setCardapioGerado(null)}
+        >
+          <Text style={{ color: '#00E676', fontWeight: '700', fontSize: 15 }}>Gerar Novo Cardápio</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </LinearGradient>
+  );
+}
 
   return (
     <LinearGradient colors={["#0a1f1a", "#0f172a"]} style={styles.gradient}>
@@ -565,6 +651,24 @@ function SectionTitle({ title }: { title: string }) {
     </View>
   );
 }
+
+const resultStyles = StyleSheet.create({
+  diaCard: { backgroundColor: 'rgba(15,23,42,0.95)', borderRadius: 16, marginBottom: 14, borderWidth: 1.5, borderColor: 'rgba(0,230,118,0.2)', overflow: 'hidden' },
+  diaHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, backgroundColor: 'rgba(0,230,118,0.08)' },
+  diaBullet: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00E676' },
+  diaNome: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
+  diaKcal: { color: '#00E676', fontSize: 12, fontWeight: '600' },
+  refCard: { marginHorizontal: 12, marginBottom: 10, marginTop: 6, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: 12, borderLeftWidth: 2.5, borderLeftColor: '#00E676' },
+  refHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
+  refNome: { color: '#fff', fontSize: 13, fontWeight: '700', flex: 1 },
+  refHorario: { color: '#bafdbc', fontSize: 11 },
+  refKcal: { color: '#00E676', fontSize: 11, fontWeight: '600' },
+  alimentoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 4 },
+  bullet: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#00E676', marginTop: 7, flexShrink: 0 },
+  alimentoText: { flex: 1, color: '#d1fae5', fontSize: 12, lineHeight: 18 },
+  supCard: { backgroundColor: 'rgba(0,230,118,0.06)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(0,230,118,0.2)', marginTop: 8 },
+  supTitle: { color: '#00E676', fontSize: 15, fontWeight: '700', marginBottom: 12 },
+});
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
